@@ -10,7 +10,7 @@
 [View the Full Project Report](https://labmage.github.io/diabetes-knn-classification/) | [View the Presentation Slides](https://labmage.github.io/diabetes-knn-classification/slides.html#/title-slide)
 
 ## About the Project
-diabetes-knn-classification 
+
 This capstone investigates whether k-Nearest Neighbors (kNN), despite its simplicity and computational limitations, can effectively classify diabetes and prediabetes in a large, imbalanced healthcare dataset. The analysis uses 253,680 responses from the CDC Behavioral Risk Factor Surveillance System and examines how data cleaning, feature scaling, class balancing, feature selection, distance metrics, and neighbor weighting affect model performance.
 
 The project goes beyond reporting overall accuracy, which can be misleading when diabetic cases represent a minority of the data. Four kNN configurations were evaluated and compared with Decision Tree and Random Forest models using ROC-AUC, precision, recall, and F1 score. The strongest kNN configuration combined StandardScaler, SMOTE, feature selection, Euclidean distance, distance weighting, and k = 15. It achieved a ROC-AUC of 0.88 and identified 88% of diabetes and prediabetes cases, outperforming the comparison models in minority-class detection.
