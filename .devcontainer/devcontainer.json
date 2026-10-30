@@ -1,0 +1,17 @@
+
+{
+  "name": "diabetes-knn",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "quarto.quarto"
+      ]
+    }
+  }
+}
