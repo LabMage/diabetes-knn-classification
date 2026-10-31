@@ -8,7 +8,7 @@ from common import get_split
 X_train, X_test, y_train, y_test = get_split()
 
 model = RandomForestClassifier(
-    n_estimators=100,
+    n_estimators=200,
     max_depth=15,
     random_state=100
 )
