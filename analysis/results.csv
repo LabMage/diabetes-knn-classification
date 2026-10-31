@@ -1,0 +1,8 @@
+Model,k,Distance,Weights,Scaler,SMOTE,Feature_selection,Accuracy,ROC_AUC,PR_AUC,Precision_1,Recall_1,F1_1
+kNN 1 (baseline),5.0,Euclidean,Uniform,Standard (all),No,No,0.832,0.705,0.281,0.406,0.206,0.274
+kNN 2 (RobustScaler),15.0,Manhattan,Distance,Robust (all),No,No,0.841,0.752,0.334,0.446,0.155,0.23
+kNN 3 (SMOTE),10.0,Euclidean,Uniform,Standard (continuous),Yes (train only),No,0.691,0.733,0.286,0.278,0.641,0.388
+kNN 4 (Chi2 + SMOTE),15.0,Euclidean,Distance,Standard (continuous),Yes (train only),Chi2 top 12 (train only),0.731,0.722,0.3,0.303,0.579,0.397
+Decision Tree,,,,None,No,No,0.849,0.794,0.388,0.517,0.154,0.237
+Decision Tree (SMOTE),,,,None,Yes (train only),No,0.671,0.756,0.317,0.281,0.74,0.407
+Random Forest,,,,None,No,No,0.854,0.813,0.432,0.599,0.134,0.219
