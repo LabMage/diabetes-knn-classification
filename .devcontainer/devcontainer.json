@@ -1,10 +1,11 @@
-
 {
   "name": "diabetes-knn",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
-    "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+    "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {},
+    "ghcr.io/devcontainers/features/git-lfs:1": {}
   },
+  "postCreateCommand": "pip install -r requirements.txt",
   "customizations": {
     "vscode": {
       "extensions": [
