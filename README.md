@@ -84,7 +84,8 @@ Results are produced by `analysis/run_all_models.py` and saved in `analysis/resu
 - SMOTE substantially improved minority-class detection.
 - Scaling was essential because kNN calculates distances between observations.
 - RobustScaler, Manhattan distance and distance weighting gave the best kNN ROC-AUC (0.752); chi-square feature selection reduced the features from 21 to 12 without improving results.
-- Tree-based models outperformed kNN on this dataset: Random Forest had the best ROC-AUC (0.813).
+- Tree-based models achieved higher ROC-AUC than all kNN configurations; Random Forest had the best ROC-AUC (0.813).
+- No single model was best on all metrics: the choice of model and metric should follow the goal of the analysis.
 
 ## Technologies Used
 

@@ -678,10 +678,10 @@ d = |X_2 - X_1| + |Y_2 - Y_1|
 <span class="fragment">RobustScaler, Manhattan distance, distance weighting</span></p></li>
 <li><p><strong>SMOTE raised recall</strong> from ~0.2 to 0.58–0.64<br>
 <span class="fragment">at the cost of lower precision</span></p></li>
-<li><p>Feature selection (kNN 4): 12 features instead of 21, no gain over kNN 3</p></li>
+<li><p>Feature selection (kNN 4): 12 features instead of 21, mixed results vs.&nbsp;kNN 3</p></li>
 </ul>
 <aside class="notes">
-<p>Table 4 shows the results for each kNN model. As you can see, model performance varies significantly depending on configuration. For instance, KNN 1 and 2 without SMOTE had higher accuracy but poor recall - meaning they missed a lot of diabetic cases. kNN 2 had the best ROC-AUC among kNN models. SMOTE in kNN 3 and kNN 4 tripled recall for diabetic cases, but lowered precision. Feature selection in kNN 4 reduced the features from 21 to 12 without improving results. We use kNN 4 for the comparison with tree models.</p>
+<p>Table 4 shows the results for each kNN model. As you can see, model performance varies significantly depending on configuration. For instance, KNN 1 and 2 without SMOTE had higher accuracy but poor recall - meaning they missed a lot of diabetic cases. kNN 2 had the best ROC-AUC among kNN models. SMOTE in kNN 3 and kNN 4 tripled recall for diabetic cases, but lowered precision. Feature selection in kNN 4 reduced the features from 21 to 12 with mixed results. We use kNN 4 for the comparison with tree models because, among the configurations that detect most diabetic cases, it had the best balance between precision and recall (highest F1, 0.397).</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -808,9 +808,11 @@ Random Forest performs best (AUC = 0.81), kNN models reach 0.70–0.75.</p>
 <section id="conclusion" class="slide level2 smaller">
 <h2>Conclusion</h2>
 <ul>
-<li><p>Preprocessing changes kNN’s behavior: <strong>SMOTE</strong> raised recall for diabetic cases from ~0.2 to ~0.6; <strong>RobustScaler, Manhattan distance, k = 15 and distance weighting</strong> (kNN 2) improved ROC-AUC (0.70 → 0.75).<br>
+<li><p>Preprocessing changes kNN’s behavior: configurations with <strong>SMOTE</strong> had ~3× higher recall for diabetic cases (~0.6 vs.&nbsp;~0.2); <strong>RobustScaler, Manhattan distance, k = 15 and distance weighting</strong> (kNN 2) improved ROC-AUC (0.70 → 0.75).<br>
 </p></li>
-<li><p>On this large dataset, <strong>tree-based models performed better</strong>: Random Forest had the best ROC-AUC (0.813), Decision Tree with SMOTE the highest recall (0.740).<br>
+<li><p>On this large dataset, <strong>tree-based models achieved higher ROC-AUC</strong>: Random Forest had the best ROC-AUC (0.813), Decision Tree with SMOTE the highest recall (0.740).<br>
+</p></li>
+<li><p><strong>No single best model:</strong> the choice of model and metric should follow the goal of the analysis.<br>
 </p></li>
 <li><p><strong>Accuracy alone is misleading</strong> for imbalanced medical data.<br>
 </p></li>
@@ -818,7 +820,7 @@ Random Forest performs best (AUC = 0.81), kNN models reach 0.70–0.75.</p>
 </p></li>
 </ul>
 <aside class="notes">
-<p>In conclusion, preprocessing choices clearly change how kNN performs, and SMOTE is the most important step for detecting diabetic cases. However, after correcting the evaluation, tree-based models - especially Random Forest - performed better than kNN on this dataset. The original result of AUC 0.88 was caused by data leakage; the corrected results show the true performance.</p>
+<p>In conclusion, preprocessing choices clearly change how kNN performs, and the configurations with SMOTE detected far more diabetic cases. However, after correcting the evaluation, tree-based models - especially Random Forest - performed better than kNN on this dataset. The original result of AUC 0.88 was inflated by data leakage; the corrected results provide a valid estimate of performance.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;

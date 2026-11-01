@@ -436,13 +436,13 @@ kNN 4 combined SMOTE with chi-square feature selection.
 - **SMOTE raised recall** from ~0.2 to 0.58–0.64  
   [at the cost of lower precision]{.fragment}
 
-- Feature selection (kNN 4): 12 features instead of 21, no gain over kNN 3
+- Feature selection (kNN 4): 12 features instead of 21, mixed results vs. kNN 3
 
 ::: notes
 Table 4 shows the results for each kNN model.
 As you can see, model performance varies significantly depending on configuration. For instance, KNN 1 and 2 without SMOTE had higher accuracy but poor recall - meaning they missed a lot of diabetic cases.
 kNN 2 had the best ROC-AUC among kNN models. SMOTE in kNN 3 and kNN 4 tripled recall for diabetic cases, but lowered precision.
-Feature selection in kNN 4 reduced the features from 21 to 12 without improving results. We use kNN 4 for the comparison with tree models.
+Feature selection in kNN 4 reduced the features from 21 to 12 with mixed results. We use kNN 4 for the comparison with tree models because, among the configurations that detect most diabetic cases, it had the best balance between precision and recall (highest F1, 0.397).
 :::
 
 ## Comparing kNN with Tree Models {.smaller}
@@ -494,18 +494,20 @@ After correcting data leakage in the evaluation, kNN did not outperform the tree
 
 ## Conclusion {.smaller}
 
-- Preprocessing changes kNN's behavior: **SMOTE** raised recall for diabetic cases from ~0.2 to ~0.6; **RobustScaler, Manhattan distance, k = 15 and distance weighting** (kNN 2) improved ROC-AUC (0.70 → 0.75).\
+- Preprocessing changes kNN's behavior: configurations with **SMOTE** had ~3× higher recall for diabetic cases (~0.6 vs. ~0.2); **RobustScaler, Manhattan distance, k = 15 and distance weighting** (kNN 2) improved ROC-AUC (0.70 → 0.75).\
 
-- On this large dataset, **tree-based models performed better**: Random Forest had the best ROC-AUC (0.813), Decision Tree with SMOTE the highest recall (0.740).\
+- On this large dataset, **tree-based models achieved higher ROC-AUC**: Random Forest had the best ROC-AUC (0.813), Decision Tree with SMOTE the highest recall (0.740).\
+
+- **No single best model:** the choice of model and metric should follow the goal of the analysis.\
 
 - **Accuracy alone is misleading** for imbalanced medical data.\
 
 - *Revision 2026:* the original evaluation of kNN 4 (AUC 0.88) contained data leakage; all models were re-evaluated on one untouched test set.\
 
 ::: notes
-In conclusion, preprocessing choices clearly change how kNN performs, and SMOTE is the most important step for detecting diabetic cases.
+In conclusion, preprocessing choices clearly change how kNN performs, and the configurations with SMOTE detected far more diabetic cases.
 However, after correcting the evaluation, tree-based models - especially Random Forest - performed better than kNN on this dataset.
-The original result of AUC 0.88 was caused by data leakage; the corrected results show the true performance.
+The original result of AUC 0.88 was inflated by data leakage; the corrected results provide a valid estimate of performance.
 :::
 
 ## References {.smaller .scrollable}

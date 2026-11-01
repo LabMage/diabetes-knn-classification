@@ -1253,7 +1253,7 @@ print(report_text_fs)
 fpr_fs, tpr_fs, _ = roc_curve(y_test_fs, y_proba_fs)
 
 ```
-This model reached recall of 0.58 for diabetic cases (precision 0.30, ROC-AUC 0.72). Feature selection reduced the input from 21 to 12 features but did not improve on kNN 3.
+This model reached recall of 0.58 for diabetic cases (precision 0.30, ROC-AUC 0.72). Feature selection reduced the input from 21 to 12 features, with mixed results compared with kNN 3: higher accuracy, PR-AUC and F1, but lower ROC-AUC and recall (kNN 3 and kNN 4 also differ in k and weighting).
 
 #### Comparison of kNN Models with Different Configurations
 
@@ -1287,11 +1287,16 @@ kable(knn_models, format = "html", caption = "Table 4: Performance Comparison of
 
 ```
 
-As shown, kNN 2 achieved the best ROC-AUC (0.752) and PR-AUC (0.334) among the kNN models. SMOTE (kNN 3 and kNN 4) raised recall for diabetic cases from about 0.2 to 0.58-0.64, at the cost of lower precision and accuracy.
+The four configurations show clear patterns:
 
-In contrast, the baseline models (kNN 1 and kNN 2), trained on the original imbalanced dataset, achieved good overall accuracy but performed poorly on recall, highlighting their limited utility for minority class detection.
+- **Configurations without class balancing (kNN 1 and kNN 2)** reached high accuracy (83–84%) but detected only 15–21% of diabetic cases.
+- **Configurations trained with SMOTE (kNN 3 and kNN 4)** detected 58–64% of diabetic cases — about three times more — at the cost of lower precision and accuracy.
+- **Scaling and distance settings (kNN 2: RobustScaler, Manhattan distance, distance weighting)** gave the best ranking performance among the kNN models (ROC-AUC 0.752 vs. 0.705 for the baseline).
+- **Chi-square feature selection (kNN 4)** reduced the input from 21 to 12 features, with mixed results compared with kNN 3: higher accuracy, PR-AUC and F1, but lower ROC-AUC and recall.
 
-These results show that class balancing is the most important step for detecting diabetic cases with kNN, while feature selection did not add a measurable improvement. **kNN 4** (SMOTE + chi-square feature selection) is used for comparison with tree-based models in the next analysis phase.
+In other words, the choice of kNN configuration determines the trade-off between overall accuracy and the detection of diabetic cases. Because several settings changed between configurations, these patterns describe each configuration as a whole rather than the isolated effect of a single setting.
+
+**Selection of kNN 4 for comparison with tree-based models.** kNN 4 was the configuration selected for this comparison in the original 2025 study, and the corrected results support keeping it. Since the priority in a screening context is detecting diabetic cases, the relevant candidates are the SMOTE-trained configurations (kNN 3 and kNN 4). kNN 4 had the highest F1 for the diabetic class among all kNN models (0.397; F1 combines precision and recall), higher accuracy and PR-AUC than kNN 3, and used 12 instead of 21 features. kNN 2 had the highest ROC-AUC (0.752) and kNN 3 the highest recall (0.641).
 
 #### Classifier Comparison: Decision Tree and Random Forest
 
@@ -1513,25 +1518,25 @@ def plot_roc_auc():
 plot_roc_auc()
 ```
 
-The ROC curve demonstrates the ability of each model to distinguish diabetic from non-diabetic cases. Random Forest (AUC = 0.81) and Decision Tree (AUC = 0.79) separated diabetic from non-diabetic cases better than kNN with SMOTE and feature selection (AUC = 0.72). kNN remains a simple and interpretable baseline, but on this large dataset the tree-based models performed better.
+The ROC curve demonstrates the ability of each model to distinguish diabetic from non-diabetic cases. Random Forest (AUC = 0.81) and Decision Tree (AUC = 0.79) separated diabetic from non-diabetic cases better than kNN with SMOTE and feature selection (AUC = 0.72). kNN remains a simple and interpretable baseline, but on this large dataset the tree-based models achieved higher ROC-AUC.
 
 ## Conclusion
 
 This project investigated the behavior and performance of the k-Nearest Neighbors (kNN) algorithm for classifying diabetes using a real-world health dataset of over 253,000 observations. The focus  was not only on achieving high accuracy, but on evaluating how model configuration, preprocessing, and resampling affect kNN’s ability to detect the minority (diabetic) class - critical in healthcare contexts where false negatives carry significant risk.
 
-We explored four kNN variations, altering hyperparameters (k, distance metric), scaling techniques, and class balancing via SMOTE. SMOTE had the largest effect on minority-class detection, raising recall for diabetic cases from about 0.2 to about 0.6. kNN 2 (RobustScaler, Manhattan distance, distance weighting) achieved the best ROC-AUC among the kNN models (0.752). Chi-Square feature selection (kNN 4) reduced the number of features from 21 to 12 without improving performance.
+We explored four kNN variations, altering hyperparameters (k, distance metric), scaling techniques, and class balancing via SMOTE. The configurations with SMOTE showed much higher minority-class recall (from about 0.2 to about 0.6). kNN 2 (RobustScaler, Manhattan distance, distance weighting) achieved the best ROC-AUC among the kNN models (0.752). Chi-Square feature selection (kNN 4) reduced the number of features from 21 to 12 with mixed effects on performance.
 
-To contextualize its performance, kNN 4 (SMOTE + feature selection) was compared to two tree-based classifiers: Decision Tree (DT) and Random Forest (RF). Random Forest achieved the highest ROC-AUC (0.813) and PR-AUC (0.432), but its recall for the diabetic class was only 13% at the default threshold. Decision Tree trained on SMOTE achieved the highest recall (0.740). kNN did not reach the ranking performance of the tree-based models. 
+To contextualize its performance, kNN 4 (SMOTE + feature selection) was compared to two tree-based classifiers: Decision Tree (DT) and Random Forest (RF). Random Forest achieved the highest ROC-AUC (0.813) and PR-AUC (0.432), but its recall for the diabetic class was only 13% at the default threshold. Decision Tree trained on SMOTE achieved the highest recall (0.740). All tree-based models had higher ROC-AUC than every kNN configuration, while kNN 3 and kNN 4 detected more diabetic cases than the Decision Tree and Random Forest trained without SMOTE. 
 
 These results highlight a crucial trade-off between accuracy and sensitivity: models trained on imbalanced data reach high accuracy but miss most diabetic cases, while SMOTE improves detection at the cost of precision. Accuracy alone is therefore a poor measure for imbalanced medical data.
 
-In sum, preprocessing choices such as scaling, distance metric and class balancing clearly change kNN's behavior, but on this large, mostly binary dataset kNN was outperformed by tree-based models. kNN should therefore be applied with care in healthcare classification: its results depend strongly on preprocessing choices, and its performance should always be compared with an established benchmark model.
+In sum, the choice of kNN configuration determines the trade-off between accuracy and the detection of diabetic cases: the configurations trained with SMOTE detected about three times more diabetic cases, and the kNN 2 distance and scaling settings gave the best ranking among kNN models. However, no kNN configuration reached the ROC-AUC of the tree-based models on this large, mostly binary dataset. Beyond the kNN methodology itself, the main lesson of this project is that no single model was best for this task: Random Forest had the highest ROC-AUC, Decision Tree with SMOTE the highest recall, and the SMOTE-trained kNN configurations detected far more diabetic cases than the models trained without balancing. The choice of model and evaluation metric should therefore follow the goal of the analysis — in screening, detecting as many diabetic cases as possible while keeping false alarms acceptable. kNN, a simple and intuitive method that classifies a patient by similar patients, can be a reasonable choice when its configuration is aligned with this goal, but its performance should always be compared with an established benchmark model.
 
-**Methodological revision (2026).** The original 2025 version of this report stated ROC-AUC = 0.88 for kNN 4. A later review by Elena Boiko found that, for kNN 4 and Decision Tree with SMOTE, SMOTE (and for kNN 4 also chi-square selection and scaling) had been applied before the train-test split, so these models were tested on a balanced set containing synthetic records; the tree models had also been evaluated on data with duplicates. In this revision, all preprocessing is fitted on the training data only and all models share one test set. The corrected results are lower but reflect the true performance of the models.
+**Methodological revision (2026).** The original 2025 version of this report stated ROC-AUC = 0.88 for kNN 4. A later review by Elena Boiko found that, for kNN 4 and Decision Tree with SMOTE, SMOTE (and for kNN 4 also chi-square selection and scaling) had been applied before the train-test split, so these models were tested on a balanced set containing synthetic records; the tree models had also been evaluated on data with duplicates. In this revision, all preprocessing is fitted on the training data only and all models share one test set. The corrected results are lower and provide a valid estimate of the models' performance.
 
 ## Limitations
 
-Hyperparameters were taken from the original 2025 analysis without systematic cross-validated tuning. The k values were chosen experimentally in 2025 by comparing results on the same test split, so the kNN test results may be slightly optimistic. Standard SMOTE creates fractional values for binary features (SMOTENC would be more appropriate). Precision and recall are reported at the 0.5 threshold. Removing duplicate records changed the share of diabetic cases from 13.93% to 15.29%.
+The four kNN configurations changed several settings at once (k, scaling, distance metric, weighting, SMOTE, feature selection); the study therefore compares configurations as a whole and does not isolate the effect of each individual setting. Hyperparameters were taken from the original 2025 analysis without systematic cross-validated tuning. The k values were chosen experimentally in 2025 by comparing results on the same test split, so the kNN test results may be slightly optimistic. Standard SMOTE creates fractional values for binary features (SMOTENC would be more appropriate). Precision and recall are reported at the 0.5 threshold. Removing duplicate records changed the share of diabetic cases from 13.93% to 15.29%.
 
 ## References
 
