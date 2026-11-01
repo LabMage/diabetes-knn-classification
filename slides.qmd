@@ -480,15 +480,15 @@ kNN 4 did not reach the performance of the tree-based models.
 
 ## ROC_AUC curves comparison {.smaller}
 
-ROC curves of all seven models on the same test set.\
-Random Forest performs best (AUC = 0.81), kNN models reach 0.70–0.75.
+ROC curves of kNN 4 and the tree-based models on the same test set.\
+Random Forest has the highest AUC (0.81), kNN 4 reaches 0.72.
 
-![ROC Curve](analysis/roc_curve.png)
+![ROC Curve](roc_curve.png)
 
 ::: notes
 This ROC curve shows how well each model separates diabetic from non-diabetic cases.
 Random Forest had the highest AUC of 0.81, followed by the Decision Tree.
-The kNN models reached AUC between 0.70 and 0.75.
+kNN 4 reached an AUC of 0.72.
 After correcting data leakage in the evaluation, kNN did not outperform the tree-based models.
 :::
 
