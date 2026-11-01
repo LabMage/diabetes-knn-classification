@@ -13,9 +13,9 @@
 
 This capstone investigates whether k-Nearest Neighbors (kNN), despite its simplicity and computational limitations, can effectively classify diabetes and prediabetes in a large, imbalanced healthcare dataset. The analysis uses 253,680 responses from the CDC Behavioral Risk Factor Surveillance System and examines how data cleaning, feature scaling, class balancing, feature selection, distance metrics, and neighbor weighting affect model performance.
 
-The project goes beyond reporting overall accuracy, which can be misleading when diabetic cases represent a minority of the data. Four kNN configurations were evaluated and compared with Decision Tree and Random Forest models using ROC-AUC, precision, recall, and F1 score. The strongest kNN configuration combined StandardScaler, SMOTE, feature selection, Euclidean distance, distance weighting, and k = 15. It achieved a ROC-AUC of 0.88 and identified 88% of diabetes and prediabetes cases, outperforming the comparison models in minority-class detection.
+The project goes beyond reporting overall accuracy, which can be misleading when diabetic cases represent a minority of the data. Four kNN configurations were evaluated and compared with Decision Tree and Random Forest models using ROC-AUC, precision, recall, and F1 score. After a methodological revision in 2026, all models were evaluated on one common, untouched test set. SMOTE raised kNN recall for diabetes and prediabetes cases from about 0.2 to about 0.6, and the best kNN ROC-AUC was 0.752 (kNN 2). The tree-based models performed better: Random Forest achieved the highest ROC-AUC (0.813), and Decision Tree with SMOTE the highest recall (0.740).
 
-This work demonstrates how thoughtful preprocessing and evaluation can transform a basic algorithm into a strong classifier for an imbalanced healthcare problem. It also reflects the project’s central priority: selecting a model based not only on overall accuracy, but on its ability to recognize the cases that are easiest—and potentially most consequential—to miss.
+This work shows how preprocessing choices change the behavior of kNN on an imbalanced healthcare problem, and why models should be selected not only on overall accuracy, but on their ability to recognize the cases that are easiest—and potentially most consequential—to miss.
 
 ## Dataset
 
@@ -57,29 +57,25 @@ Four kNN configurations were evaluated by varying:
 - SMOTE application
 - Feature selection
 
-The strongest kNN model was then compared with Decision Tree and Random Forest classifiers.
-
-### Best kNN Configuration
-
-- **Neighbors:** k = 15
-- **Distance metric:** Euclidean
-- **Weighting:** Distance-based
-- **Scaler:** StandardScaler
-- **Class balancing:** SMOTE
-- **Feature selection:** Applied
+kNN 4 (SMOTE + chi-square feature selection) was then compared with Decision Tree and Random Forest classifiers.
 
 ## Results
 
-| Model | Accuracy | ROC-AUC | Precision (Class 1) | Recall (Class 1) | F1 (Class 1) |
-|---|---:|---:|---:|---:|---:|
-| **kNN with SMOTE and feature selection** | **0.78** | **0.88** | **0.73** | **0.88** | **0.80** |
-| Decision Tree with SMOTE | 0.72 | 0.80 | 0.70 | 0.78 | 0.74 |
-| Decision Tree without SMOTE | 0.86 | 0.81 | 0.52 | 0.15 | 0.24 |
-| Random Forest without SMOTE | 0.87 | 0.82 | 0.59 | 0.13 | 0.21 |
+All models were evaluated on the same untouched test set (68,843 observations, 15.29% class 1).
 
-Although the unbalanced Decision Tree and Random Forest models produced higher overall accuracy, their recall for the diabetes and prediabetes class was very low. This means they failed to identify most minority-class cases.
+| Model | Accuracy | ROC-AUC | PR-AUC | Precision (Class 1) | Recall (Class 1) | F1 (Class 1) |
+|---|---:|---:|---:|---:|---:|---:|
+| kNN 1 (baseline) | 0.832 | 0.705 | 0.281 | 0.406 | 0.206 | 0.274 |
+| kNN 2 (RobustScaler, Manhattan) | 0.841 | 0.752 | 0.334 | 0.446 | 0.155 | 0.230 |
+| kNN 3 (SMOTE) | 0.691 | 0.733 | 0.286 | 0.278 | 0.641 | 0.388 |
+| kNN 4 (SMOTE + feature selection) | 0.731 | 0.722 | 0.300 | 0.303 | 0.579 | 0.397 |
+| Decision Tree | 0.849 | 0.794 | 0.388 | 0.517 | 0.154 | 0.237 |
+| Decision Tree with SMOTE | 0.671 | 0.756 | 0.317 | 0.281 | **0.740** | **0.407** |
+| **Random Forest** | **0.854** | **0.813** | **0.432** | 0.599 | 0.134 | 0.219 |
 
-The optimized kNN model provided the strongest balance between precision and recall. It achieved the highest ROC-AUC and minority-class F1 score while identifying 88% of diabetes and prediabetes observations.
+Models trained on imbalanced data reached high accuracy but identified only 13–21% of diabetes and prediabetes cases. SMOTE increased recall substantially at the cost of precision. Random Forest separated the classes best (highest ROC-AUC and PR-AUC), while Decision Tree with SMOTE detected the most minority-class cases.
+
+Results are produced by `analysis/run_all_models.py` and saved in `analysis/results.csv`.
 
 ## Key Findings
 
@@ -87,8 +83,9 @@ The optimized kNN model provided the strongest balance between precision and rec
 - Models trained without class balancing favored the majority class and missed many diabetes and prediabetes cases.
 - SMOTE substantially improved minority-class detection.
 - Scaling was essential because kNN calculates distances between observations.
-- Feature selection and distance weighting improved kNN performance.
-- The optimized kNN model outperformed the comparison models in ROC-AUC, recall, and F1 score for the minority class.
+- RobustScaler, Manhattan distance and distance weighting gave the best kNN ROC-AUC (0.752); chi-square feature selection reduced the features from 21 to 12 without improving results.
+- Tree-based models achieved higher ROC-AUC than all kNN configurations; Random Forest had the best ROC-AUC (0.813).
+- No single model was best on all metrics: the choice of model and metric should follow the goal of the analysis.
 
 ## Technologies Used
 
@@ -113,8 +110,12 @@ The optimized kNN model provided the strongest balance between precision and rec
 - `references.bib` — academic references
 - `cdc_data.csv` — project dataset
 - `eda.csv` — exploratory analysis data
-- `knn_tuning_results.csv` — kNN tuning results
+- `analysis/` — corrected evaluation script, results and ROC curves
 - `images/` and `slides_files/` — figures and presentation resources
+
+## Methodological Revision (2026)
+
+The original 2025 evaluation reported ROC-AUC 0.88 for the kNN model with SMOTE and feature selection. In October 2026, Elena Boiko reviewed the code and found data leakage: for this model and for the Decision Tree with SMOTE, SMOTE (and for kNN also feature selection and scaling) had been applied before the train-test split, and the tree models had been evaluated on a different test set that included duplicates. All preprocessing is now fitted on training data only, and all seven models are evaluated on one common test set. The results above replace the original figures.
 
 ## Project Attribution
 

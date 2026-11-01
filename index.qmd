@@ -373,7 +373,7 @@ The k-Nearest Neighbors (kNN) algorithm operates under the assumption that data 
 ### Implementation of kNN
 
 ```{r, include=FALSE}
-install.packages("DiagrammeR", repos = "https://cloud.r-project.org")
+# install.packages("DiagrammeR", repos = "https://cloud.r-project.org")
 
 ```
 
@@ -498,10 +498,10 @@ analyze the data in view of the current research.
 library(reticulate)
 
 # Tell reticulate to use the correct Python environment
-use_python("C:/Users/Elena/miniconda3/envs/myenv/python.exe", required = TRUE)
+use_python(Sys.which("python3"), required = TRUE)
 
 # Install necessary packages into myenv (if needed)
-py_install(c("pandas", "ucimlrepo", "scipy", "scikit-learn", "imbalanced-learn"))
+# Packages are installed from requirements.txt
 
 ```
 
@@ -537,7 +537,7 @@ library(knitr)
 
 # Load dataset in R
 cdc_data_df <- read_csv("cdc_data.csv", show_col_types = FALSE)
-kable(head(cdc_data_df), caption = "Table 1. The First Few Raw of CDC Diabetes Dataset")
+kable(head(cdc_data_df), caption = "Table 1. The First Few Rows of CDC Diabetes Dataset")
 ```
 
 #### Feature Overview 
@@ -619,7 +619,7 @@ table_data <- data.frame(
 )
 
 # Print Table with knitr::kable()
-kable(table_data, caption = "Table 1. Summary of Explanatory Variables", align = "l")
+kable(table_data, caption = "Table 2. Summary of Explanatory Variables", align = "l")
 
 
 ```
@@ -663,7 +663,7 @@ library(readr)
 exploratory_df <- read_csv("eda.csv", show_col_types = FALSE)
 
 # Print table with a new title (caption)
-kable(exploratory_df, caption = "Table 2: Data Integrity Report")
+kable(exploratory_df, caption = "Table 3: Data Integrity Report")
 
 ```
 There are no missing values, meaning no imputation is needed.
@@ -707,7 +707,7 @@ plt.tight_layout()
 plt.show()
 
 ```
-- **BMI** stands out with the largest range (min = 12.0, max = 98.0) and highest standard deviation (6.6)  - indicating significant variability.
+- **BMI** stands out with the largest range (min = 12.0, max = 98.0) and a standard deviation of 6.6 - indicating significant variability.
 
 - **MentHlth** and **PhysHlth** also show wide spreads (standard deviations of 7.4 and 8.7, respectively), reinforcing the need for scaling to prevent these features from dominating distance calculations.
 
@@ -789,7 +789,7 @@ plot_class_distribution()
 ```
 This imbalance can lead to biased model predictions, favoring the dominant class while under-detecting diabetes cases.
 
-To handle this imbalance and improve classification performance, we can apply strategies such as oversampling the minority class (e.g., with SMOTE) or undersampling the majority class. Another effective approach is to use class-weighted algorithms, like setting weights='distance' in KNeighborsClassifier, which has more influence on underrepresented classes during prediction.
+To handle this imbalance and improve classification performance, we can apply strategies such as oversampling the minority class (e.g., with SMOTE) or undersampling the majority class. Note that weights='distance' in KNeighborsClassifier weights neighbors by distance, not by class, so it does not by itself correct class imbalance.
 
 #### Correlation Analysis
 
@@ -946,7 +946,7 @@ We tested four distinct kNN configurations, progressively applying different str
 
 Each model was evaluated using accuracy, ROC-AUC, recall, precision, and f1-score, with particular emphasis on recall for the diabetic class, given the critical importance of minimizing false negatives in healthcare applications.
 
-Results from the four configurations are summarized in Table 3, highlighting the effect of different preprocessing and tuning choices on kNN’s ability to detect diabetes accurately and fairly.
+Results from the four configurations are summarized in Table 4, highlighting the effect of different preprocessing and tuning choices on kNN’s ability to detect diabetes accurately and fairly.
 
 #### Data Preprocessing
 
@@ -1031,7 +1031,7 @@ X_train_smote, y_train_smote = SMOTE(random_state=42).fit_resample(X_train, y_tr
 
 - **Train-Test Split:**
 
-After removing duplicates, the cleaned dataset was split into a training set (70%) and a test set (30%) using stratified sampling to maintain class proportions. Feature scaling was performed only on the training set prior to SMOTE to preserve correct feature distributions during oversampling. This approach prevented data leakage into the test set and ensured fair model evaluation. 
+After removing duplicates, the cleaned dataset was split into a training set (70%) and a test set (30%) using stratified sampling to maintain class proportions. This single split is used for all seven models. Scaling, feature selection and SMOTE are fitted on the training set only, and every model is evaluated on the same untouched test set (68,843 observations, 15.29% diabetic). 
 
 - **Ordinal Features Retained as Numeric:**
 
@@ -1039,13 +1039,13 @@ Variables such as Age, Education, Income, and GenHlth were preserved in their or
 
 - **Continuous Features Scaled:**
 
-The variables BMI, MentHlth, and PhysHlth were standardized using StandardScaler to ensure equal contribution during distance calculations, a critical aspect for kNN’s accuracy.
+In this shared preprocessing block, the variables BMI, MentHlth, and PhysHlth were standardized using StandardScaler (fitted on the training set) to ensure equal contribution during distance calculations. This version of the data is used by kNN 3; kNN 1 and kNN 2 scale all 21 features with their own scalers, as described below.
 
 - **Class Balancing with SMOTE:** 
 
 To mitigate the impact of class imbalance, Synthetic Minority Over-sampling Technique (SMOTE) was applied to the training set. This produced a balanced 50/50 class distribution, enhancing the model’s ability to identify minority-class (diabetic) cases.
 
-The preprocessing pipeline ensured a clean, balanced, and distance-aware feature space for modeling and evaluation.
+The preprocessing pipeline ensured a clean and distance-aware feature space (with a SMOTE-balanced training set for kNN 3) for modeling and evaluation.
 
 #### Training and Evaluating kNN Models
 
@@ -1060,7 +1060,7 @@ X_train_imbal, X_test_imbal, y_train_imbal, y_test_imbal = train_test_split(
     X, y, test_size=0.3, random_state=100, stratify=y
 )
 
-# Scale continuous features
+# Scale all features (fit on training data only)
 scaler = StandardScaler()
 X_train_imbal_scaled = scaler.fit_transform(X_train_imbal)
 X_test_imbal_scaled = scaler.transform(X_test_imbal)
@@ -1091,20 +1091,20 @@ print(report_text)
 
 Evaluation was conducted on a hold-out test set that reflects the real-world class distribution:
 
-The model achieved high overall accuracy (83.3%), driven largely by the dominant majority class.
+The model achieved high overall accuracy (83.2%), driven largely by the dominant majority class.
 However, it performed poorly in identifying diabetic cases, confirming that kNN is sensitive to class imbalance and may overlook minority outcomes without intervention.
 
 **kNN 2: kNN with Robust Scaling on Imbalanced Data**
 
 To explore whether scaling and distance weighting could improve baseline performance, the second kNN model was trained on the same imbalanced dataset with several enhancements.
 
-This configuration used k = 15, Manhattan distance (p=1), and distance-based weighting, allowing closer neighbors to have greater influence. To reduce the impact of outliers in health-related features like BMI, MentHlth, and PhysHlth, RobustScaler was applied to the continuous variables.
+This configuration used k = 15, Manhattan distance (p=1), and distance-based weighting, allowing closer neighbors to have greater influence. To reduce the impact of outliers in health-related features like BMI, MentHlth, and PhysHlth, RobustScaler was applied to all features (fitted on the training set).
 
 ```{python}
 
 from sklearn.preprocessing import RobustScaler
 
-# Scale continuous features using RobustScaler
+# Scale all features using RobustScaler (fit on training data only)
 scaler = RobustScaler()
 X_train_imbal_scaled = scaler.fit_transform(X_train_imbal)
 X_test_imbal_scaled = scaler.transform(X_test_imbal)
@@ -1138,7 +1138,7 @@ print(report_text)
 
 ```
 
-Compared to the baseline, this model showed slightly improved accuracy (84.1%) and a better ROC-AUC score (0.75). However, recall for the diabetic class remained low (16%), indicating that class imbalance was still a major obstacle, even with enhanced distance metrics and scaling.
+Compared to the baseline, this model showed slightly improved accuracy (84.1%) and a better ROC-AUC score (0.75). However, recall for the diabetic class remained low (15.5%), indicating that class imbalance was still a major obstacle, even with enhanced distance metrics and scaling.
 
 **kNN 3: kNN Performance on SMOTE-Resampled Data**
 
@@ -1179,19 +1179,18 @@ However, precision dropped to 28%, indicating an increase in false positives - a
 
 To evaluate whether reducing dimensionality could improve model performance, we applied a **Chi-Square feature selection** technique. This method ranks features by their statistical dependency with the target (Diabetes_binary), helping identify those most relevant for classification.
 
-Based on the scores (shown in Figure 9), the top 12 features were selected for training. These included a mix of continuous and ordinal variables, with continuous features (like BMI, MentHlth, and PhysHlth) scaled using StandardScaler when present.
+Chi-square scores were computed on the training set only. Based on the scores (shown in Figure 9), the top 12 features were selected for training. These included a mix of continuous and ordinal variables, with continuous features (like BMI, MentHlth, and PhysHlth) scaled using StandardScaler when present.
 
 ```{python}
 
-# Reuse preprocessed SMOTE-balanced data
-X = cdc_df.drop(columns=["Diabetes_binary"])
-y = cdc_df["Diabetes_binary"]
-X_sm, y_sm = SMOTE(random_state=42).fit_resample(X, y)
-X_sm = pd.DataFrame(X_sm, columns=X.columns)
+# Same split as the shared preprocessing block, but unscaled (chi2 needs non-negative values)
+X_train_raw, X_test_raw, y_train_fs, y_test_fs = train_test_split(
+    X, y, test_size=0.3, random_state=100, stratify=y
+)
 
-# Apply Chi-Square feature selection
+# Apply Chi-Square feature selection on TRAINING data only
 selector = SelectKBest(score_func=chi2, k="all")
-selector.fit(X_sm, y_sm)
+selector.fit(X_train_raw, y_train_fs)
 
 # Store results in DataFrame
 chi2_scores = selector.scores_
@@ -1214,26 +1213,26 @@ The training data was resampled with SMOTE to address class imbalance. The model
 k = 15, Euclidean distance (p=2), and distance-based weighting.
 
 ```{python}
-# Get top 12 features
+# Get top 12 features (selected on training data)
 top_12 = chi2_results.head(12)["Feature"].values
-X_top = X_sm[top_12].copy()
+X_train_fs = X_train_raw[top_12].copy()
+X_test_fs = X_test_raw[top_12].copy()
 
-# Scale only if needed
+# Scale continuous features: fit on train, apply to test
 continuous = ["BMI", "MentHlth", "PhysHlth"]
-for col in continuous:
-    if col in X_top.columns:
-        X_top[col] = StandardScaler().fit_transform(X_top[[col]])
+cont_fs = [c for c in continuous if c in X_train_fs.columns]
+scaler_fs = StandardScaler().fit(X_train_fs[cont_fs])
+X_train_fs[cont_fs] = scaler_fs.transform(X_train_fs[cont_fs])
+X_test_fs[cont_fs] = scaler_fs.transform(X_test_fs[cont_fs])
 
-# Train/test split
-X_train_fs, X_test_fs, y_train_fs, y_test_fs = train_test_split(
-    X_top, y_sm, test_size=0.3, random_state=42
-)
+# SMOTE on TRAINING data only
+X_train_fs_sm, y_train_fs_sm = SMOTE(random_state=42).fit_resample(X_train_fs, y_train_fs)
 
 # Train kNN (Top 12 features)
 knn_fs = KNeighborsClassifier(n_neighbors=15, weights='distance', metric='minkowski', p=2)
-knn_fs.fit(X_train_fs, y_train_fs)
+knn_fs.fit(X_train_fs_sm, y_train_fs_sm)
 
-# Evaluate
+# Evaluate on the untouched test set
 y_pred_fs = knn_fs.predict(X_test_fs)
 y_proba_fs = knn_fs.predict_proba(X_test_fs)[:, 1]
 
@@ -1254,13 +1253,13 @@ print(report_text_fs)
 fpr_fs, tpr_fs, _ = roc_curve(y_test_fs, y_proba_fs)
 
 ```
-This model achieved the best balance between recall and precision, indicating that combining feature selection with SMOTE yielded more stable and accurate classification of diabetic cases.
+This model reached recall of 0.58 for diabetic cases (precision 0.30, ROC-AUC 0.72). Feature selection reduced the input from 21 to 12 features, with mixed results compared with kNN 3: higher accuracy, PR-AUC and F1, but lower ROC-AUC and recall (kNN 3 and kNN 4 also differ in k and weighting).
 
 #### Comparison of kNN Models with Different Configurations
 
 The first phase of model evaluation focused exclusively on optimizing the k-Nearest Neighbors (kNN) algorithm. Four versions of kNN were trained with varying configurations, including distance metrics, weighting strategies, feature scaling techniques, and class balancing using SMOTE. 
 
-Table 3 summarizes the performance of each configuration across key metrics: accuracy, ROC-AUC, precision, recall, and F1-score for the diabetic class (label = 1)
+Table 4 summarizes the performance of each configuration across key metrics: accuracy, ROC-AUC, precision, recall, and F1-score for the diabetic class (label = 1)
 
 ```{r}
 library(kableExtra)
@@ -1273,33 +1272,39 @@ knn_models <- data.frame(
   Weights = c("Uniform", "Distance", "Uniform", "Distance"),
   Scaler = c("StandardScaler", "RobustScaler", "StandardScaler", "StandardScaler"),
   SMOTE = c("No", "No", "Yes", "Yes (Feature Selection)"),
-  Accuracy = c(0.83, 0.84, 0.69, 0.78),
-  ROC_AUC = c(0.70, 0.75, 0.73, 0.88),
-  Precision_1 = c(0.41, 0.45, 0.28, 0.73),
-  Recall_1 = c(0.21, 0.16, 0.64, 0.88),
-  F1_1 = c(0.27, 0.23, 0.39, 0.80)
+  Accuracy = c(0.832, 0.841, 0.691, 0.731),
+  ROC_AUC = c(0.705, 0.752, 0.733, 0.722),
+  PR_AUC = c(0.281, 0.334, 0.286, 0.300),
+  Precision_1 = c(0.406, 0.446, 0.278, 0.303),
+  Recall_1 = c(0.206, 0.155, 0.641, 0.579),
+  F1_1 = c(0.274, 0.230, 0.388, 0.397)
 )
 
 # Display with clean headers
-kable(knn_models, format = "html", caption = "Table 3: Performance Comparison of kNN Models") %>%
+kable(knn_models, format = "html", caption = "Table 4: Performance Comparison of kNN Models") %>%
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
   column_spec(1, bold = TRUE)
 
 ```
 
-As shown, kNN 4, which combines SMOTE, feature selection, distance weighting, and k = 15, achieved the strongest performance overall. It yielded the highest ROC-AUC score (0.88) and recall (0.88) for diabetic cases, indicating its superior ability to identify high-risk individuals.
+The four configurations show clear patterns:
 
-In contrast, the baseline models (kNN 1 and kNN 2), trained on the original imbalanced dataset, achieved good overall accuracy but performed poorly on recall, highlighting their limited utility for minority class detection.
+- **Configurations without class balancing (kNN 1 and kNN 2)** reached high accuracy (83–84%) but detected only 15–21% of diabetic cases.
+- **Configurations trained with SMOTE (kNN 3 and kNN 4)** detected 58–64% of diabetic cases — about three times more — at the cost of lower precision and accuracy.
+- **Scaling and distance settings (kNN 2: RobustScaler, Manhattan distance, distance weighting)** gave the best ranking performance among the kNN models (ROC-AUC 0.752 vs. 0.705 for the baseline).
+- **Chi-square feature selection (kNN 4)** reduced the input from 21 to 12 features, with mixed results compared with kNN 3: higher accuracy, PR-AUC and F1, but lower ROC-AUC and recall.
 
-These results underscore the importance of both class balancing and dimensionality reduction when applying kNN to imbalanced healthcare datasets. Based on these results, **kNN 4** is selected for further comparison with tree-based models in the next analysis phase.
+In other words, the choice of kNN configuration determines the trade-off between overall accuracy and the detection of diabetic cases. Because several settings changed between configurations, these patterns describe each configuration as a whole rather than the isolated effect of a single setting.
+
+**Selection of kNN 4 for comparison with tree-based models.** kNN 4 was the configuration selected for this comparison in the original 2025 study, and the corrected results support keeping it. Since the priority in a screening context is detecting diabetic cases, the relevant candidates are the SMOTE-trained configurations (kNN 3 and kNN 4). kNN 4 had the highest F1 for the diabetic class among all kNN models (0.397; F1 combines precision and recall), higher accuracy and PR-AUC than kNN 3, and used 12 instead of 21 features. kNN 2 had the highest ROC-AUC (0.752) and kNN 3 the highest recall (0.641).
 
 #### Classifier Comparison: Decision Tree and Random Forest
 
-After identifying the best-performing kNN configuration, we compared it to two widely used tree-based classifiers: Decision Tree (DT) and Random Forest (RF). These models were chosen for their strong performance on structured data and their interpretability - key advantages in healthcare applications.
+After evaluating the kNN configurations, we compared kNN 4 (SMOTE + feature selection) to two widely used tree-based classifiers: Decision Tree (DT) and Random Forest (RF). These models were chosen for their strong performance on structured data and their interpretability - key advantages in healthcare applications.
 
-Both DT and RF were trained using the same train-test split as the kNN models to ensure a consistent basis for comparison. We evaluated each model’s performance on both the original (imbalanced) dataset and a SMOTE-resampled version to examine how they handle class imbalance relative to kNN.
+Both DT and RF were trained and evaluated on the same deduplicated training and test sets as the kNN models. The Decision Tree was evaluated both on the original (imbalanced) training data and on a SMOTE-resampled training set; Random Forest was evaluated on the original training data only.
 
-**Decision Tree – Inbalanced dataset**
+**Decision Tree – Imbalanced dataset**
 
 The Decision Tree classifier was first trained on the original, imbalanced dataset without any resampling or feature selection. This setup mirrors the baseline scenario used in kNN evaluation and allows us to observe how a simple tree-based model handles imbalance on its own.
 
@@ -1308,8 +1313,8 @@ The Decision Tree classifier was first trained on the original, imbalanced datas
 from sklearn.tree import DecisionTreeClassifier
 
 # Prepare data
-X = cdc_data_df.drop(columns=['Diabetes_binary'])
-y = cdc_data_df['Diabetes_binary']
+X = cdc_df.drop(columns=['Diabetes_binary'])
+y = cdc_df['Diabetes_binary']
 
 # Split data
 X_train, X_test, y_train, y_test = train_test_split(
@@ -1342,7 +1347,7 @@ print(report_text_dt)
 fpr_dt, tpr_dt, _ = roc_curve(y_test, y_proba_dt)
 
 ```
-Despite high overall accuracy (86.2%), the model struggled to detect diabetic cases, with a recall of just 15% for the minority class.This reinforces the common issue in medical datasets where models optimize for the majority class at the expense of detecting critical minority outcomes.
+Despite high overall accuracy (84.9%), the model struggled to detect diabetic cases, with a recall of just 15% for the minority class.This reinforces the common issue in medical datasets where models optimize for the majority class at the expense of detecting critical minority outcomes.
 
 **Decision Tree – SMOTE-Resampled Dataset**
 
@@ -1350,21 +1355,19 @@ Next, the Decision Tree model was retrained on a SMOTE-resampled dataset to eval
 
 ```{python}
 
-# Train-test split (SMOTE-resampled data)
-X_train_sm, X_test_sm, y_train_sm, y_test_sm = train_test_split(
-    X_sm, y_sm, test_size=0.3, random_state=100, stratify=y_sm
-)
+# SMOTE on the training set only; the test set stays untouched
+X_train_sm, y_train_sm = SMOTE(random_state=42).fit_resample(X_train, y_train)
 
 # Train Decision Tree on SMOTE data
 dt_model_sm = DecisionTreeClassifier(max_depth=10, random_state=100)
 dt_model_sm.fit(X_train_sm, y_train_sm)
 
 # Predict + evaluate
-y_pred = dt_model_sm.predict(X_test_sm)
-y_proba_dt_sm = dt_model_sm.predict_proba(X_test_sm)[:, 1]
+y_pred = dt_model_sm.predict(X_test)
+y_proba_dt_sm = dt_model_sm.predict_proba(X_test)[:, 1]
 
-accuracy = accuracy_score(y_test_sm, y_pred)
-roc_auc = roc_auc_score(y_test_sm, y_proba_dt_sm)
+accuracy = accuracy_score(y_test, y_pred)
+roc_auc = roc_auc_score(y_test, y_proba_dt_sm)
 
 # Build report
 report_text_dt_sm = f"""
@@ -1372,19 +1375,19 @@ Decision Tree (SMOTE) - Accuracy: {accuracy:.4f}
 Decision Tree (SMOTE) - ROC-AUC Score: {roc_auc:.4f}
 
 Classification Report (Test Set):
-{classification_report(y_test_sm, y_pred)}
+{classification_report(y_test, y_pred)}
 """
 print(report_text_dt_sm)
 
 # Store ROC for later
-fpr_dt_sm, tpr_dt_sm, _ = roc_curve(y_test_sm, y_proba_dt_sm)
+fpr_dt_sm, tpr_dt_sm, _ = roc_curve(y_test, y_proba_dt_sm)
  
 ```
-SMOTE significantly improved the model’s ability to identify diabetic cases, as reflected in the jump in recall. While overall accuracy dropped slightly (from 86.2% to 72.5%), this trade-off is often acceptable in medical contexts where minimizing false negatives is critical.
+SMOTE significantly improved the model’s ability to identify diabetic cases, as reflected in the jump in recall. While overall accuracy dropped substantially (from 84.9% to 67.1%), this trade-off is often acceptable in medical contexts where minimizing false negatives is critical.
 
 **Random Forest – Imbalanced Dataset**
 
-The Random Forest (RF) classifier was evaluated using the original, imbalanced dataset. Unlike kNN or a single Decision Tree, RF typically handles imbalance more gracefully due to its ensemble nature. Additionally, SMOTE was not applied, as oversampling synthetic data can increase the risk of overfitting in ensemble models.
+The Random Forest (RF) classifier was evaluated using the original, imbalanced dataset. As an ensemble of trees, RF is often expected to be more robust than a single model; however, without rebalancing it can still favor the majority class. SMOTE was not applied, as oversampling synthetic data can increase the risk of overfitting in ensemble models.
 
 The model was trained with 200 trees, a maximum depth of 15, and evaluated on the same test set used throughout.
 
@@ -1421,13 +1424,13 @@ print(report_text_rf)
 fpr_rf, tpr_rf, _ = roc_curve(y_test, y_proba_rf)
 
 ```
-Random Forest showed the best overall accuracy (86.6%) but, like the basic Decision Tree, it suffered from low recall (13%) for the diabetic class. This highlights a recurring issue: even strong classifiers may underperform on minority classes unless explicitly adjusted for imbalance.
+Random Forest showed the best overall accuracy (85.4%) but, like the basic Decision Tree, it suffered from low recall (13%) for the diabetic class. This highlights a recurring issue: even strong classifiers may underperform on minority classes unless explicitly adjusted for imbalance.
 
 #### Code Implementation Comparison
 
-To consolidate the modeling results, we compared the best-performing kNN configuration (kNN 4) with Decision Tree and Random Forest classifiers.
+To consolidate the modeling results, we compared kNN 4 (SMOTE + feature selection) with Decision Tree and Random Forest classifiers.
 
-Table 4 summarizes key performance metrics, while Figure 10 displays ROC curves to visualize the models' ability to distinguish diabetic from non-diabetic individuals.
+Table 5 summarizes key performance metrics, while Figure 10 displays ROC curves to visualize the models' ability to distinguish diabetic from non-diabetic individuals.
 
 ```{r}
 library(kableExtra)
@@ -1439,24 +1442,27 @@ model_metrics <- data.frame(
             "Decision Tree", 
             "Random Forest"),
   SMOTE = c("Yes (Feature Selection)", "Yes", "No", "No"),
-  Accuracy = c(0.78, 0.72, 0.86, 0.87),
-  ROC_AUC = c(0.88, 0.80, 0.81, 0.82),
-  Precision_1 = c(0.73, 0.70, 0.52, 0.59),
-  Recall_1 = c(0.88, 0.78, 0.15, 0.13),
-  F1_1 = c(0.80, 0.74, 0.24, 0.21)
+  Accuracy = c(0.731, 0.671, 0.849, 0.854),
+  ROC_AUC = c(0.722, 0.756, 0.794, 0.813),
+  PR_AUC = c(0.300, 0.317, 0.388, 0.432),
+  Precision_1 = c(0.303, 0.281, 0.517, 0.599),
+  Recall_1 = c(0.579, 0.740, 0.154, 0.134),
+  F1_1 = c(0.397, 0.407, 0.237, 0.219)
 )
 
 # Display in unified format
-kable(model_metrics, format = "html", caption = "Table 4: Performance Comparison of Best kNN vs. Tree-Based Models") %>%
+kable(model_metrics, format = "html", caption = "Table 5: Performance Comparison of kNN 4 vs. Tree-Based Models") %>%
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
   column_spec(1, bold = TRUE)
 
 ```
 From the comparison:
 
-- *kNN with Feature Selection and SMOTE* achieved the highest ROC-AUC (0.88) and recall for the diabetic class (88%), striking the best balance between sensitivity and precision.
+- *Random Forest* achieved the highest ROC-AUC (0.813) and PR-AUC (0.432), but detected only 13% of diabetic cases at the 0.5 threshold.
 
-- *Decision Tree with SMOTE* also showed solid recall (78%), but lower AUC (0.80) and overall accuracy.
+- *Decision Tree with SMOTE* achieved the highest recall for the diabetic class (0.740), with ROC-AUC of 0.756.
+
+- *kNN with Feature Selection and SMOTE* reached recall of 0.579 and ROC-AUC of 0.722, below both tree-based models in ranking performance.
 
 - The *non-resampled Decision Tree and Random Forest* models performed well on accuracy and recall for the majority class (non-diabetic), but severely underperformed on recall for diabetic cases (15% and 13%, respectively).
 
@@ -1465,18 +1471,18 @@ These findings highlight the importance of targeted preprocessing and algorithm 
 ```{python, echo=FALSE}
 
 roc_auc_fs = roc_auc_score(y_test_fs, y_proba_fs)
-roc_auc_dt_sm = roc_auc_score(y_test_sm, y_proba_dt_sm)
+roc_auc_dt_sm = roc_auc_score(y_test, y_proba_dt_sm)
 roc_auc_dt = roc_auc_score(y_test, y_proba_dt)
 roc_auc_rf = roc_auc_score(y_test, y_proba_rf)
 
 fpr_fs, tpr_fs, _ = roc_curve(y_test_fs, y_proba_fs)
-fpr_dt_sm, tpr_dt_sm, _ = roc_curve(y_test_sm, y_proba_dt_sm)
+fpr_dt_sm, tpr_dt_sm, _ = roc_curve(y_test, y_proba_dt_sm)
 fpr_dt, tpr_dt, _ = roc_curve(y_test, y_proba_dt)
 fpr_rf, tpr_rf, _ = roc_curve(y_test, y_proba_rf)
 
 ```
 
-Figure 10 (ROC curves) reinforces this performance difference, with kNN clearly outperforming other models in the high-sensitivity region - a critical aspect in medical screening tools.
+Figure 10 (ROC curves) shows that the tree-based models, especially Random Forest, lie above the kNN curve across most of the range.
 
 ```{python}
 
@@ -1506,28 +1512,31 @@ def plot_roc_auc():
 
     # Render the plot
     plt.tight_layout()
+    plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 plot_roc_auc()
 ```
-```{python, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
-plt.close()
-```
 
-The ROC curve demonstrates the ability of each model to distinguish diabetic from non-diabetic cases. The kNN model with SMOTE and feature selection achieved the highest AUC value of 0.88 which demonstrated superior performance in distinguishing between diabetic and non-diabetic cases. Random Forest and Decision Tree performed reasonably well, but neither matched kNN in class separation. These results support the conclusion that a carefully tuned kNN model can offer both strong predictive accuracy and clinical utility.
+The ROC curve demonstrates the ability of each model to distinguish diabetic from non-diabetic cases. Random Forest (AUC = 0.81) and Decision Tree (AUC = 0.79) separated diabetic from non-diabetic cases better than kNN with SMOTE and feature selection (AUC = 0.72). kNN remains a simple and interpretable baseline, but on this large dataset the tree-based models achieved higher ROC-AUC.
 
 ## Conclusion
 
 This project investigated the behavior and performance of the k-Nearest Neighbors (kNN) algorithm for classifying diabetes using a real-world health dataset of over 253,000 observations. The focus  was not only on achieving high accuracy, but on evaluating how model configuration, preprocessing, and resampling affect kNN’s ability to detect the minority (diabetic) class - critical in healthcare contexts where false negatives carry significant risk.
 
-We explored four kNN variations, altering hyperparameters (k, distance metric), scaling techniques, and class balancing via SMOTE. Among these, Model 4 - which combined SMOTE, Chi-Square feature selection, and distance-weighted voting - emerged as the best configuration. It achieved a strong balance between accuracy (78%), ROC-AUC (0.88), and recall for diabetic cases (0.88), outperforming all other kNN models. Increasing the value of k improved model stability and performance, which is especially beneficial when working with large datasets like ours, where higher k helps smooth out noise and reduce variance in predictions.
+We explored four kNN variations, altering hyperparameters (k, distance metric), scaling techniques, and class balancing via SMOTE. The configurations with SMOTE showed much higher minority-class recall (from about 0.2 to about 0.6). kNN 2 (RobustScaler, Manhattan distance, distance weighting) achieved the best ROC-AUC among the kNN models (0.752). Chi-Square feature selection (kNN 4) reduced the number of features from 21 to 12 with mixed effects on performance.
 
-To contextualize its performance, the best kNN model was compared to two tree-based classifiers: Decision Tree (DT) and Random Forest (RF). While RF achieved slightly higher overall accuracy (87%) on the imbalanced dataset, its recall for the diabetic class was just 13%, indicating poor sensitivity to minority cases. Similarly, DT models showed higher accuracy but struggled to match the recall and ROC-AUC of the tuned kNN. Only Decision Tree trained on SMOTE approached comparable recall levels (78%) but still lagged behind kNN in ROC-AUC (0.80 vs. 0.88). 
+To contextualize its performance, kNN 4 (SMOTE + feature selection) was compared to two tree-based classifiers: Decision Tree (DT) and Random Forest (RF). Random Forest achieved the highest ROC-AUC (0.813) and PR-AUC (0.432), but its recall for the diabetic class was only 13% at the default threshold. Decision Tree trained on SMOTE achieved the highest recall (0.740). All tree-based models had higher ROC-AUC than every kNN configuration, while kNN 3 and kNN 4 detected more diabetic cases than the Decision Tree and Random Forest trained without SMOTE. 
 
-These results highlight a crucial trade-off: although tree-based models excel in overall classification, they often underperform in minority class detection when not explicitly rebalanced. In contrast, a carefully tuned and resampled kNN model offers a more balanced and interpretable solution in medical classification tasks.
+These results highlight a crucial trade-off between accuracy and sensitivity: models trained on imbalanced data reach high accuracy but miss most diabetic cases, while SMOTE improves detection at the cost of precision. Accuracy alone is therefore a poor measure for imbalanced medical data.
 
-In sum, this analysis demonstrates how fine-tuning kNN and applying proper preprocessing strategies can significantly improve its performance, even on large, noisy datasets. The findings support kNN’s continued relevance as a simple yet powerful algorithm in healthcare analytics, particularly when paired with balancing and feature selection techniques.
+In sum, the choice of kNN configuration determines the trade-off between accuracy and the detection of diabetic cases: the configurations trained with SMOTE detected about three times more diabetic cases, and the kNN 2 distance and scaling settings gave the best ranking among kNN models. However, no kNN configuration reached the ROC-AUC of the tree-based models on this large, mostly binary dataset. Beyond the kNN methodology itself, the main lesson of this project is that no single model was best for this task: Random Forest had the highest ROC-AUC, Decision Tree with SMOTE the highest recall, and the SMOTE-trained kNN configurations detected far more diabetic cases than the models trained without balancing. The choice of model and evaluation metric should therefore follow the goal of the analysis — in screening, detecting as many diabetic cases as possible while keeping false alarms acceptable. kNN, a simple and intuitive method that classifies a patient by similar patients, can be a reasonable choice when its configuration is aligned with this goal, but its performance should always be compared with an established benchmark model.
+
+**Methodological revision (2026).** The original 2025 version of this report stated ROC-AUC = 0.88 for kNN 4. A later review by Elena Boiko found that, for kNN 4 and Decision Tree with SMOTE, SMOTE (and for kNN 4 also chi-square selection and scaling) had been applied before the train-test split, so these models were tested on a balanced set containing synthetic records; the tree models had also been evaluated on data with duplicates. In this revision, all preprocessing is fitted on the training data only and all models share one test set. The corrected results are lower and provide a valid estimate of the models' performance.
+
+## Limitations
+
+The four kNN configurations changed several settings at once (k, scaling, distance metric, weighting, SMOTE, feature selection); the study therefore compares configurations as a whole and does not isolate the effect of each individual setting. Hyperparameters were taken from the original 2025 analysis without systematic cross-validated tuning. The k values were chosen experimentally in 2025 by comparing results on the same test split, so the kNN test results may be slightly optimistic. Standard SMOTE creates fractional values for binary features (SMOTENC would be more appropriate). Precision and recall are reported at the 0.5 threshold. Removing duplicate records changed the share of diabetic cases from 13.93% to 15.29%.
 
 ## References
 
