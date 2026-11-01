@@ -90,7 +90,7 @@ That makes it more transparent, which is valuable in healthcare, where decision-
 Our project followed a structured approach.
 We used the CDC’s diabetes health indicators dataset, which includes over 250,000 survey responses.
 After cleaning and preparing the data, we trained multiple versions of kNN by changing key parameters like the number of neighbors and the distance metric.
-We then compared the best kNN’s performance with decision trees and random forests to see how it performed in a real-world healthcare prediction task.
+We then compared kNN 4 (SMOTE + feature selection) with decision trees and random forests to see how it performed in a real-world healthcare prediction task.
 :::
 
 ## Method: kNN Overview {.center .middle}
@@ -292,7 +292,7 @@ The dataset’s size and feature variety made it an ideal test case for evaluati
 [kNN is highly sensitive to scale]{.fragment}
 
 **Feature Relationships**  
-[No multicollinearity (r < 0.5)]{.fragment}  
+[No strong multicollinearity (max r = 0.52)]{.fragment}  
 [All features retained for now]{.fragment}
 
 **Early Insight**  
@@ -325,7 +325,7 @@ One early pattern we noticed: people with diabetes generally had higher BMI, but
 ::: {.column width="40%"}
 ```{r setup, include=FALSE}
 library(reticulate)
-use_python("C:/Users/Elena/miniconda3/envs/myenv/python.exe", required = TRUE)
+use_python(Sys.which("python3"), required = TRUE)
 
 ```
 
@@ -379,18 +379,18 @@ We addressed this in preprocessing.
     [Age, Education, Income, and GenHlth retained due to natural ordering]{.fragment}
 
 -   **Scaled Features with Outliers**\
-    [BMI, MentHlth, PhysHlth scaled with StandardScaler & Robustscaler]{.fragment}
+    [Features scaled with StandardScaler or RobustScaler (fitted on training data)]{.fragment}
 
 -   **Handled class imbalance**\
     [Applied SMOTE to generate synthetic diabetic samples]{.fragment}
 
-➡️ Final dataset: **clean, scaled, and balanced**
+➡️ Final dataset: **clean and scaled; SMOTE applied to training data only**
 
 ::: notes
 To get the data ready, we removed duplicates and kept ordinal features like age, education, and income as numeric.
-The variables BMI, MentHlth, and PhysHlth were standardized using StandardScaler or RobustScaler to ensure equal contribution during distance calculations, a critical aspect for kNN’s accuracy.
+Features were scaled with StandardScaler or RobustScaler, fitted on the training data, to ensure equal contribution during distance calculations, a critical aspect for kNN’s accuracy.
 To fix the class imbalance, we used SMOTE, which creates synthetic diabetic cases to help the model learn both classes equally.
-After these steps, the dataset was clean, scaled, and balanced — ready for training our kNN models.
+After these steps, the data was cleaned and scaled, and SMOTE balanced the training set for kNN 3 and kNN 4.
 :::
 
 ## kNN Model Setup {.smaller}
@@ -415,56 +415,55 @@ To better understand kNN’s behavior, we designed four model variations.
 We changed the number of neighbors, distance type, and weighting method.
 We also experimented with different scaling techniques and applied SMOTE to handle class imbalance.
 In one version, we also used feature selection to reduce dimensional noise.
-The final model - kNN 4 - combined all these enhancements and delivered the strongest performance overall.
+kNN 4 combined SMOTE with chi-square feature selection.
 :::
 
 ## Performance of kNN Variants {.smaller}
-#### Table 3: Performance Comparison of kNN Models {.no-title}
+#### Table 4: Performance Comparison of kNN Models {.no-title}
 
 ::: {style="overflow-x: auto; font-size: 90%"}
-| Model | k | Distance | Weights | Scaler | SMOTE | Accuracy | ROC_AUC | Precision_1 | Recall_1 | F1_1 |
-|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-| kNN 1 | 5 | Euclidean (p=2) | Uniform | StandardScaler | No | 0.83 | 0.70 | 0.41 | 0.21 | 0.27 |
-| kNN 2 | 15 | Manhattan (p=1) | Distance | RobustScaler | No | 0.84 | 0.75 | 0.45 | 0.16 | 0.23 |
-| kNN 3 | 10 | Euclidean (p=2) | Uniform | StandardScaler | Yes | 0.69 | 0.73 | 0.28 | 0.64 | 0.39 |
-| kNN 4 | 15 | Euclidean (p=2) | Distance | StandardScaler | Yes (FS) | 0.78 | 0.88 | 0.73 | 0.88 | 0.80 |
+| Model | k | Distance | Weights | Scaler | SMOTE | Accuracy | ROC_AUC | PR_AUC | Precision_1 | Recall_1 | F1_1 |
+|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+| kNN 1 | 5 | Euclidean (p=2) | Uniform | StandardScaler | No | 0.832 | 0.705 | 0.281 | 0.406 | 0.206 | 0.274 |
+| kNN 2 | 15 | Manhattan (p=1) | Distance | RobustScaler | No | 0.841 | **0.752** | **0.334** | 0.446 | 0.155 | 0.230 |
+| kNN 3 | 10 | Euclidean (p=2) | Uniform | StandardScaler | Yes | 0.691 | 0.733 | 0.286 | 0.278 | **0.641** | 0.388 |
+| kNN 4 | 15 | Euclidean (p=2) | Distance | StandardScaler | Yes (FS) | 0.731 | 0.722 | 0.300 | 0.303 | 0.579 | **0.397** |
 :::
 
-- **Best configuration: kNN 4**  
-  [k = 15, Euclidean distance, distance weighting]{.fragment}  
-  [StandardScaler, SMOTE, and feature selection]{.fragment}
+- **Best ROC-AUC among kNN: kNN 2** (0.752)  
+  [RobustScaler, Manhattan distance, distance weighting]{.fragment}
 
-- **Highest Weighted F1 Score: 0.80**  
-  [Achieved recall = 0.88, precision = 0.73]{.fragment}
+- **SMOTE raised recall** from ~0.2 to 0.58–0.64  
+  [at the cost of lower precision]{.fragment}
 
-- 🩺 Most effective at identifying diabetic class (1)
+- Feature selection (kNN 4): 12 features instead of 21, no gain over kNN 3
 
 ::: notes
-Table 3 shows the results for each kNN model.
+Table 4 shows the results for each kNN model.
 As you can see, model performance varies significantly depending on configuration. For instance, KNN 1 and 2 without SMOTE had higher accuracy but poor recall - meaning they missed a lot of diabetic cases.
-KNN 4, which combined SMOTE and feature selection, offered the best balance - best F1 score of 0.80 and a recall of 0.88 - especially for minority class detection.
-That’s why we selected kNN 4 as the final model - it was the best at identifying diabetic patients fairly and consistently.
+kNN 2 had the best ROC-AUC among kNN models. SMOTE in kNN 3 and kNN 4 tripled recall for diabetic cases, but lowered precision.
+Feature selection in kNN 4 reduced the features from 21 to 12 without improving results. We use kNN 4 for the comparison with tree models.
 :::
 
 ## Comparing kNN with Tree Models {.smaller}
  
-#### Table 4: Best kNN vs. Tree-Based Models {.no-title}
+#### Table 5: kNN 4 vs. Tree-Based Models {.no-title}
 
 ::: {style="overflow-x: auto; font-size: 90%"}
-| Model         | SMOTE | Accuracy | ROC_AUC | Precision_1 | Recall_1 | F1_1 |
-|---------------|-------|----------|---------|-------------|----------|------|
-| KNN           | Yes   | 0.78     | 0.88    | 0.73        | 0.88     | 0.80 |
-| Decision Tree | Yes   | 0.72     | 0.80    | 0.70        | 0.78     | 0.74 |
-| Decision Tree | No    | 0.86     | 0.81    | 0.52        | 0.15     | 0.24 |
-| Random Forest | No    | 0.87     | 0.82    | 0.59        | 0.13     | 0.21 |
+| Model         | SMOTE | Accuracy | ROC_AUC | PR_AUC | Precision_1 | Recall_1 | F1_1 |
+|---------------|-------|----------|---------|--------|-------------|----------|------|
+| KNN 4         | Yes   | 0.731    | 0.722   | 0.300  | 0.303       | 0.579    | 0.397 |
+| Decision Tree | Yes   | 0.671    | 0.756   | 0.317  | 0.281       | **0.740** | **0.407** |
+| Decision Tree | No    | 0.849    | 0.794   | 0.388  | 0.517       | 0.154    | 0.237 |
+| Random Forest | No    | **0.854** | **0.813** | **0.432** | 0.599  | 0.134    | 0.219 |
 :::
 
 
-<span class="fragment">- **kNN achieved the highest F1 score** (0.80)
-with strong recall on the diabetic class\
+<span class="fragment">- **Random Forest had the best ROC-AUC (0.813)
+and PR-AUC (0.432)**\
 
-<span class="fragment">- **Decision Tree with SMOTE** performed
-comparably but slightly lower on F1\
+<span class="fragment">- **Decision Tree with SMOTE** had the highest
+recall (0.740) and F1 (0.407)\
 
 <span class="fragment">- **Random Forest had highest accuracy**, but
 **poor recall** (0.13) shows it struggled to detect diabetic cases\
@@ -473,41 +472,40 @@ Tree-based models offer interpretability, but
 may need tuning or resampling for minority detection
 
 ::: notes
-We also compared the best kNN model to Decision Trees and Random Forests.
-Random Forest had the highest accuracy — but very poor recall. It missed most diabetic cases.
-The Decision Tree with SMOTE did better, but it still couldn’t match kNN’s balance of precision and recall.
-Our tuned kNN outperformed both in detecting the minority class, making it a stronger choice for disease prediction.
+We also compared kNN 4 to Decision Trees and Random Forests.
+Random Forest had the highest accuracy and the best ROC-AUC — but at the 0.5 threshold it missed most diabetic cases.
+The Decision Tree with SMOTE had the highest recall.
+kNN 4 did not reach the performance of the tree-based models.
 :::
 
 ## ROC_AUC curves comparison {.smaller}
 
-This plot compares the ROC curves for all four models.\
-kNN with Feature Selection performs best (AUC = 0.88), followed by
-Random Forest.
+ROC curves of all seven models on the same test set.\
+Random Forest performs best (AUC = 0.81), kNN models reach 0.70–0.75.
 
-![ROC Curve](slides_files/roc_curve.png)
+![ROC Curve](analysis/roc_curve.png)
 
 ::: notes
 This ROC curve shows how well each model separates diabetic from non-diabetic cases.
-Our best kNN model, with SMOTE and feature selection, had the highest AUC of 0.88, meaning it balanced true positives and false positives better than the others.
-Random Forest and Decision Tree performed reasonably well, but neither matched kNN in class separation.
-This supports the idea that a well-tuned kNN model can be both accurate and clinically effective.
+Random Forest had the highest AUC of 0.81, followed by the Decision Tree.
+The kNN models reached AUC between 0.70 and 0.75.
+After correcting data leakage in the evaluation, kNN did not outperform the tree-based models.
 :::
 
 ## Conclusion {.smaller}
 
-- This project demonstrated that the **k-Nearest Neighbors (kNN)** algorithm can be an effective tool for disease prediction when properly tuned and supported by strong preprocessing.\
+- Preprocessing changes kNN's behavior: **SMOTE** raised recall for diabetic cases from ~0.2 to ~0.6; **RobustScaler, Manhattan distance, k = 15 and distance weighting** (kNN 2) improved ROC-AUC (0.70 → 0.75).\
 
-- Despite its simplicity, kNN achieved competitive results through careful configuration — including scaling, handling class imbalance, and feature selection.\
+- On this large dataset, **tree-based models performed better**: Random Forest had the best ROC-AUC (0.813), Decision Tree with SMOTE the highest recall (0.740).\
 
-- Its interpretability, flexibility, and performance make it a practical choice in healthcare settings, where fairness and transparency are essential.\
+- **Accuracy alone is misleading** for imbalanced medical data.\
 
-- Ultimately, this work highlights how even basic algorithms, when thoughtfully applied, can deliver meaningful insights in real-world medical data.\
+- *Revision 2026:* the original evaluation of kNN 4 (AUC 0.88) contained data leakage; all models were re-evaluated on one untouched test set.\
 
 ::: notes
-In conclusion, our study shows that kNN is a strong candidate for disease prediction, especially when transparency and recall are priorities.
-With thoughtful tuning, scaling, and SMOTE, kNN outperformed tree-based models in F1 score and minority class detection.
-Despite being simple, it handled the diabetes prediction task very well - especially after reducing dimensional noise and balancing the data.
+In conclusion, preprocessing choices clearly change how kNN performs, and SMOTE is the most important step for detecting diabetic cases.
+However, after correcting the evaluation, tree-based models - especially Random Forest - performed better than kNN on this dataset.
+The original result of AUC 0.88 was caused by data leakage; the corrected results show the true performance.
 :::
 
 ## References {.smaller .scrollable}
